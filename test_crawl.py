@@ -65,6 +65,19 @@ class OtherTestSpider(scrapy.Spider):
         with open(filename, 'wb') as f:
             f.write(response.body)
 
+class XkcdSpider(scrapy.Spider):
+    name = "xkcd"
+    allowed_domains = ["xkcd.com"]
+    start_urls = (
+        'http://xkcd.com/',
+    )
+
+    def parse(self, response):
+        # Safe if Xpath is empty, extract handles it.
+        prev_link = response.xpath('//*[@id="middleContainer"]/ul[1]/li[2]/a/@href').extract()
+        if prev_link:
+            url = response.urljoin(prev_link[0])
+            yield scrapy.Request(url, callback=self.parse)
 
 # END TEST SPIDERS
 
@@ -77,7 +90,8 @@ def crawl():
     # Yield the result of calling runner.crawl on your spider here
     yield runner.crawl(FanficSpider)
     yield runner.crawl(OtherTestSpider)
+    yield runner.crawl(XkcdSpider)
     reactor.stop()
 
 crawl()
-reactor.run()()
+reactor.run()
