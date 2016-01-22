@@ -1,3 +1,7 @@
+PROJECT_DIR = "../test-spider/"
+CACHE_DIR = ".scrapy/"
+HTTPCACHE_DIR = 'httpcache_gzip'
+
 # This script runs a set of spiders using the default compression backend.
 # After running the set of spiders once, it checks their output files and
 # records the size. It then swaps out the compression backend being used
@@ -13,6 +17,9 @@
 # -- Percent improvment in disk usage between the two backends
 
 import scrapy
+import os
+from os.path import join, getsize
+
 from twisted.internet import reactor, defer
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.log import configure_logging
@@ -27,7 +34,18 @@ from scrapy.utils.project import get_project_settings
 # use to keep track of how much space each file uses
 # I suggest a python dictionary or whatever it has
 
+
 # PLACE UTILITY FUNCTIONS HERE
+
+def getPathSize(start_path = '.'):
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(start_path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            total_size += os.path.getsize(fp)
+    return total_size
+
+
 
 # END UTILITY FUNCTIONS
 
@@ -67,9 +85,9 @@ class OtherTestSpider(scrapy.Spider):
 
 class XkcdSpider(scrapy.Spider):
     name = "xkcd"
-    allowed_domains = ["xkcd.com"]
+    allowed_domains = ["10.10.10.10"]
     start_urls = (
-        'http://xkcd.com/',
+        'http://10.10.10.10/',
     )
 
     def parse(self, response):
@@ -93,5 +111,15 @@ def crawl():
     yield runner.crawl(XkcdSpider)
     reactor.stop()
 
-crawl()
+#crawl()
+
+
+fullCacheDir = PROJECT_DIR + CACHE_DIR + HTTPCACHE_DIR
+print os.path.join(fullCacheDir)
+print ("Calculating the size of a cache directory '%s'." % fullCacheDir)
+print "This may take a while..."
+sizeInBytes = getPathSize(fullCacheDir)
+print("Total size for '%s': %.2f MB" % ( fullCacheDir, sizeInBytes / 2**20))
+
+
 reactor.run()
