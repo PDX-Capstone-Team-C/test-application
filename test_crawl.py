@@ -111,7 +111,7 @@ def crawl():
     yield runner.crawl(XkcdSpider)
     reactor.stop()
 
-#crawl()
+crawl()
 
 
 fullCacheDir = PROJECT_DIR + CACHE_DIR + HTTPCACHE_DIR
