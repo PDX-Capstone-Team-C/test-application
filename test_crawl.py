@@ -149,5 +149,6 @@ reactor.run()
 results = list(map(generate_test_results, comparisons))
 
 # Now display results of compare
+# This should probably be as easy to read as possible
 for result in results:
     display_test_results(result)
