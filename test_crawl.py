@@ -4,18 +4,103 @@ from scrapy.settings import Settings
 from scrapy.crawler import CrawlerRunner
 from scrapy.crawler import Crawler
 from scrapy.utils.log import configure_logging
+import filecmp
 
-# A handy enum for the tuple used below
+# A handy enum for the tests tuple used below
 SPIDER = 0
 SETTING = 1
 
-# The data structure to hold info for each spider to run
-# It consists of a key -- the name of the spider/backend
-# and a value -- a tuple consisting of the spider to run
-# the settings for the spider and (later) the info to output
-# at the end of the test
+# Another handy enum for the comparisons tuple
+FILE1 = 0
+FILE2 = 1
+DIR1 = 2
+DIR2 = 3
 
+# Handy shorthands for long backend names
+DEFAULT = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+DELTA = ''
+
+# DATA STRUCTURES
+# The data structure to hold info for each spider to run
+# It is a list of tuples where each tuple consists of:
+# ( a spider to run, a Settings object to execute the spider with)
 tests = []
+
+# The data structure to associate two runs of the same the spider
+# with differing backends together, so the test comparisons know what
+# things need to be compared against each otherwise
+# A list of tuples with each tuple consisting of:
+# (the name of the html file generated from default backend,
+#  the name of the html file generated from delta backend,
+#  the name of the cache directory generated from default backend,
+#  the name of the cache directory generated from delta backend)
+
+comparisons = []
+
+# The data structure that will hold the results of doing the comparisons
+# for each test. This is the stuff that should be displayed on screen
+
+results = []
+
+# END DATA STRUCTURES
+
+# UTILITY FUNCTIONS
+
+#  A utility function to set a series of Settings parameters to avoid
+# some code reduplication/boiler plate lameness. It always sets the Settings
+# object's HTTPCACHE_ENABLED to True. This is done in "functional style"
+# (rather than mutate a passed in Settings object, we just pass back a newly
+# created one)
+# Parameters:
+# directory: Directory to output cache to
+# backend: Cache backend to use
+def get_new_settings(directory='httpcache',
+                     backend=DEFAULT):
+    s = Settings()
+    s.set('HTTPCACHE_ENABLED', True)
+    s.set('HTTPCACHE_DIR', directory)
+    s.set('HTTPCACHE_STORAGE', backend)
+    s.set('COMPRESSION_ENABLED', False)
+    return s
+
+# Takes the resulting files/cache directories after a spider is run
+# and generates a few metrics:
+# 1 -- compares the two html files generated to see if they are actually correct
+# 2 -- compares the sizes of the two cache directories to determine the net
+#      difference in space
+# Parameters:
+# c : s 4-tuple (a comparsion object discussed under data structures)
+#     see the enum provided for which item in this tuple corresponds to what
+# Returns:
+# A dictionary in the following format:
+# 'isCorrect'  : True/False  true if the html files are the same,
+#                            false otherwise
+# 'd1_size'    : num         the size of the uncompressed directory
+# 'd2_size'    : num         the size of the compressed directory
+# 'size_result': num         the percent size difference
+
+def generate_test_results(c):
+    # Compare the fingerprint/checksum of f1/f2 using filecmp
+    # Compare the sizes of d1 and d2 using Max's utility function
+    # Return a dictionary in the correct format with the results
+    # The imported filecmp package can help with isCorrect
+    result = {
+        'isCorrect' : True,
+        'd1_size' : 0,
+        'd2_size' : 0,
+        'size_result' : 0
+    }
+    return result
+
+def display_test_results(r):
+    print r['isCorrect']
+    print r['d1_size']
+    print r['d2_size']
+    print r['size_result']
+
+# END UTILITY FUNCTIONS
+
+# SPIDERS
 
 # A Fanfic Spider to grab some data that (hopefully) is a bad
 # candidate for delta compression. Work in progress.
@@ -28,23 +113,24 @@ class FanficSpider(scrapy.Spider):
         "https://www.fanfiction.net/s/11498367/1/Left-Turn"]
 
     def parse(self, response):
-        filename = 'fanfic_test.html'
+        if settings.get('HTTPCACHE_STORAGE') == DEFAULT:
+            filename = 'fanfic_test_default.html'
+        else:
+            filename = 'fanfic_test_delta.html'
         with open(filename, 'wb') as f:
             f.write(response.body)
 
-# Settings for FanficSpider, one settings object for each backend
-# The settings for the first run
-settings_def = Settings()
-settings_def.set('HTTPCACHE_ENABLED', True)
-settings_def.set('HTTPCACHE_DIR', 'fanfic1')
-tests.append((FanficSpider, settings_def))
+# Queue one test using the default backend
+tests.append((FanficSpider, get_new_settings('fanfic_default')))
 
-# The settings for the second run
-settings_comp = Settings()
-# set compression backend here
-settings_comp.set('HTTPCACHE_ENABLED', True)
-settings_comp.set('HTTPCACHE_DIR', 'fanfic2')
-tests.append((FanficSpider, settings_comp))
+# Queue another test using our backend
+tests.append((FanficSpider, get_new_settings('fanfic_delta')))
+
+# Queue up a test pair result to compare the runs of this spider
+comparisons.append(('fanfic_test_default.html', 'fanfic_test_delta.html',
+                    'fanfic_default', 'fanfic_delta'))
+
+#END SPIDERS
 
 configure_logging()
 runner = CrawlerRunner()
@@ -58,3 +144,10 @@ def crawl():
 
 crawl()
 reactor.run()
+
+# After all spiders have run go ahead and conduct comparisons
+results = list(map(generate_test_results, comparisons))
+
+# Now display results of compare
+for result in results:
+    display_test_results(result)
