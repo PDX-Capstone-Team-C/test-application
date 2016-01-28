@@ -1,10 +1,12 @@
-import scrapy
+import scrap
 from twisted.internet import reactor, defer
 from scrapy.settings import Settings
 from scrapy.crawler import CrawlerRunner
 from scrapy.crawler import Crawler
 from scrapy.utils.log import configure_logging
 import filecmp
+import os
+from os.path import join, getsize
 
 # A handy enum for the tests tuple used below
 SPIDER = 0
@@ -15,6 +17,11 @@ FILE1 = 0
 FILE2 = 1
 DIR1 = 2
 DIR2 = 3
+
+# Constants related to directories
+PROJECT_DIR = "../test-spider/"
+CACHE_DIR = ".scrapy/"
+HTTPCACHE_DIR = 'httpcache_gzip'
 
 # Handy shorthands for long backend names
 DEFAULT = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
@@ -98,6 +105,14 @@ def display_test_results(r):
     print r['d2_size']
     print r['size_result']
 
+def getPathSize(start_path = '.'):
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(start_path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            total_size += os.path.getsize(fp)
+    return total_size
+
 # END UTILITY FUNCTIONS
 
 # SPIDERS
@@ -129,6 +144,21 @@ tests.append((FanficSpider, get_new_settings('fanfic_delta')))
 # Queue up a test pair result to compare the runs of this spider
 comparisons.append(('fanfic_test_default.html', 'fanfic_test_delta.html',
                     'fanfic_default', 'fanfic_delta'))
+
+# XKCD Spider
+class XkcdSpider(scrapy.Spider):
+    name = "xkcd"
+    allowed_domains = ["10.10.10.10"]
+    start_urls = (
+        'http://10.10.10.10/',
+    )
+
+    def parse(self, response):
+        # Safe if Xpath is empty, extract handles it.
+        prev_link = response.xpath('//*[@id="middleContainer"]/ul[1]/li[2]/a/@href').extract()
+        if prev_link:
+            url = response.urljoin(prev_link[0])
+            yield scrapy.Request(url, callback=self.parse)
 
 #END SPIDERS
 
