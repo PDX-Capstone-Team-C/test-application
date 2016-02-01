@@ -1,4 +1,4 @@
-import scrap
+import scrapy
 from twisted.internet import reactor, defer
 from scrapy.settings import Settings
 from scrapy.crawler import CrawlerRunner
