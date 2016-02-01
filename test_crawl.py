@@ -1,4 +1,4 @@
-import scrap
+import scrapy
 from twisted.internet import reactor, defer
 from scrapy.settings import Settings
 from scrapy.crawler import CrawlerRunner
@@ -18,10 +18,8 @@ FILE2 = 1
 DIR1 = 2
 DIR2 = 3
 
-# Constants related to directories
-PROJECT_DIR = "../test-spider/"
-CACHE_DIR = ".scrapy/"
-HTTPCACHE_DIR = 'httpcache_gzip'
+# Default cache directory
+HTTPCACHE_DIR = 'httpcache'
 
 # Handy shorthands for long backend names
 DEFAULT = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
@@ -61,8 +59,8 @@ results = []
 # Parameters:
 # directory: Directory to output cache to
 # backend: Cache backend to use
-def get_new_settings(directory='httpcache',
-                     backend=DEFAULT):
+def get_new_settings(directory = HTTPCACHE_DIR,
+                     backend = DEFAULT):
     s = Settings()
     s.set('HTTPCACHE_ENABLED', True)
     s.set('HTTPCACHE_DIR', directory)
@@ -105,7 +103,7 @@ def display_test_results(r):
     print r['d2_size']
     print r['size_result']
 
-def getPathSize(start_path = '.'):
+def getDirectorySize(start_path = HTTPCACHE_DIR):
     total_size = 0
     for dirpath, dirnames, filenames in os.walk(start_path):
         for f in filenames:
