@@ -96,7 +96,7 @@ def generate_test_results(c):
     d2_bytes = getDirectorySize(c[4])
     result = {
         'name' : c[0],
-        'isCorrect' : True,
+        'isCorrect' : filecmp.cmp(c[1],c[2],True),
         'd1' : c[3],
         'd2' : c[4],
         'd1_size' : d1_bytes,
