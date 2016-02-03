@@ -78,31 +78,51 @@ def get_new_settings(directory = HTTPCACHE_DIR,
 #     see the enum provided for which item in this tuple corresponds to what
 # Returns:
 # A dictionary in the following format:
+# 'name'       : str         name of the spider
 # 'isCorrect'  : True/False  true if the html files are the same,
 #                            false otherwise
+# 'd1'         : str         the path to the uncompressed directory
+# 'd2'         : str         the path to the compressed directory
 # 'd1_size'    : num         the size of the uncompressed directory
 # 'd2_size'    : num         the size of the compressed directory
 # 'size_result': num         the percent size difference
 
 def generate_test_results(c):
     # Compare the fingerprint/checksum of f1/f2 using filecmp
-    # Compare the sizes of d1 and d2 using Max's utility function
+    # Compare the sizes of d1 and d2 using getDirectorySize utility function
     # Return a dictionary in the correct format with the results
     # The imported filecmp package can help with isCorrect
+    d1_bytes = getDirectorySize(c[3])
+    d2_bytes = getDirectorySize(c[4])
     result = {
+        'name' : c[0],
         'isCorrect' : True,
-        'd1_size' : 0,
-        'd2_size' : 0,
-        'size_result' : 0
+        'd1' : c[3],
+        'd2' : c[4],
+        'd1_size' : d1_bytes,
+        'd2_size' : d2_bytes
     }
+
+    if d1_bytes != 0 and d2_bytes != 0 :
+        result['size_result'] = ((d2_bytes / d1_bytes) * 100)
+    else:
+        result['size_result'] = 0
+
     return result
 
 def display_test_results(r):
-    print r['isCorrect']
-    print r['d1_size']
-    print r['d2_size']
-    print r['size_result']
+    print r['name']
+    print "\t%s" % r['isCorrect']
+    print "\t%s bytes in %s" % (r['d1_size'], r['d1'])
+    print "\t%s bytes in %s" % (r['d2_size'], r['d2'])
+    print "\t%.0f%% difference" % r['size_result']
+    print "-----"
 
+# Takes the start_path parameter
+# adds the sizes of files in current directory,
+# and loops through any directories inside of
+# the current directory
+# Returns number of bytes as int
 def getDirectorySize(start_path = HTTPCACHE_DIR):
     total_size = 0
     for dirpath, dirnames, filenames in os.walk(start_path):
