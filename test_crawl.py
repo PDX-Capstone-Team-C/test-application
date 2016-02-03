@@ -131,6 +131,24 @@ def getDirectorySize(start_path = HTTPCACHE_DIR):
             total_size += os.path.getsize(fp)
     return total_size
 
+
+def setSpider(spiderName):
+
+    # Queue one test using the default backend
+    tests.append((spiderName.__name__,
+                  get_new_settings(spiderName.__name__ + '_default')))
+
+    # Queue another test using our backend
+    tests.append((spiderName.__name__,
+                  get_new_settings(spiderName.__name__ + '_delta')))
+
+    # Queue up a test pair result to compare the runs of this spider
+    comparisons.append((spiderName.__name__,
+                        spiderName.__name__ + '_default.html',
+                        spiderName.__name__ + '_delta.html',
+                        spiderName.__name__ + '_default',
+                        spiderName.__name__ + '_delta'))
+
 # END UTILITY FUNCTIONS
 
 # SPIDERS
@@ -147,21 +165,11 @@ class FanficSpider(scrapy.Spider):
 
     def parse(self, response):
         if settings.get('HTTPCACHE_STORAGE') == DEFAULT:
-            filename = 'fanfic_test_default.html'
+            filename = self.__class__.__name__ + '_default.html'
         else:
-            filename = 'fanfic_test_delta.html'
+            filename = self.__class__.__name__ + '_delta.html'
         with open(filename, 'wb') as f:
             f.write(response.body)
-
-# Queue one test using the default backend
-tests.append((FanficSpider, get_new_settings('fanfic_default')))
-
-# Queue another test using our backend
-tests.append((FanficSpider, get_new_settings('fanfic_delta')))
-
-# Queue up a test pair result to compare the runs of this spider
-comparisons.append(('fanfic_test_default.html', 'fanfic_test_delta.html',
-                    'fanfic_default', 'fanfic_delta'))
 
 # XKCD Spider
 class XkcdSpider(scrapy.Spider):
@@ -172,13 +180,29 @@ class XkcdSpider(scrapy.Spider):
     )
 
     def parse(self, response):
+        if settings.get('HTTPCACHE_STORAGE') == DEFAULT:
+            filename = self.__class__.__name__ + '_default.html'
+        else:
+            filename = self.__class__.__name__ + '_delta.html'
+
+        with open(filename, 'wb') as f:
+            f.write(response.body)
+
+        self.parse_next(self, response)
+
+    def parse_next(self, response):
         # Safe if Xpath is empty, extract handles it.
         prev_link = response.xpath('//*[@id="middleContainer"]/ul[1]/li[2]/a/@href').extract()
         if prev_link:
             url = response.urljoin(prev_link[0])
-            yield scrapy.Request(url, callback=self.parse)
+            yield scrapy.Request(url, callback=self.parseNext)
 
 #END SPIDERS
+
+
+setSpider(FanficSpider)
+setSpider(XkcdSpider)
+
 
 configure_logging()
 runner = CrawlerRunner()
