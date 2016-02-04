@@ -100,15 +100,30 @@ def generate_test_results(c):
     r = {
         'name': c['spider_name'],
         'isCorrect': True,
-        # 'isCorrect': filecmp.cmp(c['file_default'], c['file_delta'],True),
         'd1': HTTPCACHE_DIR + c['dir_default'],
         'd2': HTTPCACHE_DIR + c['dir_delta'],
         'd1_size': dir_size(HTTPCACHE_DIR + c['dir_default']),
         'd2_size': dir_size(HTTPCACHE_DIR + c['dir_delta'])
     }
 
+    # Checking correctness
+    file1 = os.path.isfile(c['file_default'])
+    file2 = os.path.isfile(c['file_delta'])
+    if file1 and file2:
+        r['isCorrect'] = filecmp.cmp(c['file_default'], c['file_delta'], True)
+    else:
+        if not file1:
+            not_found = c['file_default']
+        elif not file2:
+            not_found = c['file_delta']
+        r['isCorrect'] = "Unable to find file to compare: '%s'" % not_found
+
+    # Getting the difference result
     if r['d1_size'] != 0 and r['d2_size'] != 0:
-        r['size_result'] = 100 - ((r['d2_size'] / r['d1_size']) * 100)
+        if r['d1_size'] < r['d2_size']:
+            r['size_result'] = 100 - ((r['d1_size'] / r['d2_size']) * 100)
+        else:
+            r['size_result'] = 100 - ((r['d2_size'] / r['d1_size']) * 100)
     else:
         r['size_result'] = 0
     return r
@@ -124,7 +139,7 @@ def display_test_results(r):
     print("\tHTML files match? %s" % r['isCorrect'])
     print("\t%s bytes in %s" % (r['d1_size'], r['d1']))
     print("\t%s bytes in %s" % (r['d2_size'], r['d2']))
-    print("\t%.0f%% difference" % r['size_result'])
+    print("\t%.4f%% difference" % r['size_result'])
     print("-----")
 
 
@@ -230,7 +245,7 @@ class XkcdSpider(scrapy.spiders.CrawlSpider):
 # ================================== END SPIDERS ==============================
 
 (tests, comparisons) = set_spider(FanficSpider)
-#(tests, comparisons) = set_spider(XkcdSpider)
+(tests, comparisons) = set_spider(XkcdSpider)
 
 configure_logging()
 runner = CrawlerRunner()
