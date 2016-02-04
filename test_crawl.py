@@ -23,7 +23,7 @@ HTTPCACHE_DIR = 'httpcache'
 
 # Handy shorthands for long backend names
 DEFAULT = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
-DELTA = ''
+DELTA = 'scrapy.extensions.httpcache.DeltaLeveldbCacheStorage'
 
 # DATA STRUCTURES
 # The data structure to hold info for each spider to run
@@ -35,10 +35,13 @@ tests = []
 # with differing backends together, so the test comparisons know what
 # things need to be compared against each otherwise
 # A list of tuples with each tuple consisting of:
-# (the name of the html file generated from default backend,
+# (the name of the spider
+#  the name of the html file generated from default backend,
 #  the name of the html file generated from delta backend,
 #  the name of the cache directory generated from default backend,
-#  the name of the cache directory generated from delta backend)
+#  the name of the cache directory generated from delta backend
+#  the size of the cache directory generated from default backend,
+#  the size of the cache directory generated from delta backend)
 
 comparisons = []
 
@@ -48,6 +51,7 @@ comparisons = []
 results = []
 
 # END DATA STRUCTURES
+
 
 # UTILITY FUNCTIONS
 
@@ -59,14 +63,15 @@ results = []
 # Parameters:
 # directory: Directory to output cache to
 # backend: Cache backend to use
-def get_new_settings(directory = HTTPCACHE_DIR,
-                     backend = DEFAULT):
+def get_new_settings(directory=HTTPCACHE_DIR,
+                     backend=DEFAULT):
     s = Settings()
     s.set('HTTPCACHE_ENABLED', True)
     s.set('HTTPCACHE_DIR', directory)
     s.set('HTTPCACHE_STORAGE', backend)
     s.set('COMPRESSION_ENABLED', False)
     return s
+
 
 # Takes the resulting files/cache directories after a spider is run
 # and generates a few metrics:
@@ -86,44 +91,46 @@ def get_new_settings(directory = HTTPCACHE_DIR,
 # 'd1_size'    : num         the size of the uncompressed directory
 # 'd2_size'    : num         the size of the compressed directory
 # 'size_result': num         the percent size difference
-
 def generate_test_results(c):
     # Compare the fingerprint/checksum of f1/f2 using filecmp
     # Compare the sizes of d1 and d2 using getDirectorySize utility function
     # Return a dictionary in the correct format with the results
     # The imported filecmp package can help with isCorrect
-    d1_bytes = getDirectorySize(c[3])
-    d2_bytes = getDirectorySize(c[4])
-    result = {
-        'name' : c[0],
-        'isCorrect' : filecmp.cmp(c[1],c[2],True),
-        'd1' : c[3],
-        'd2' : c[4],
-        'd1_size' : d1_bytes,
-        'd2_size' : d2_bytes
+    r = {
+        'name': c[0],
+        # 'isCorrect': filecmp.cmp(c[1], c[2], True),
+        'isCorrect': True,
+        'd1': c[3],
+        'd2': c[4],
+        'd1_size': dir_size(c[3]),
+        'd2_size': dir_size(c[4])
     }
 
-    if d1_bytes != 0 and d2_bytes != 0 :
-        result['size_result'] = ((d2_bytes / d1_bytes) * 100)
+    if r['d1_size'] != 0 and r['d2_size'] != 0:
+        r['size_result'] = ((r['d2_size'] / r['d1_size']) * 100)
     else:
-        result['size_result'] = 0
+        r['size_result'] = 0
+    return r
 
-    return result
 
 def display_test_results(r):
-    print r['name']
-    print "\t%s" % r['isCorrect']
-    print "\t%s bytes in %s" % (r['d1_size'], r['d1'])
-    print "\t%s bytes in %s" % (r['d2_size'], r['d2'])
-    print "\t%.0f%% difference" % r['size_result']
-    print "-----"
+    print(r['name'])
+    print("\t%s" % r['isCorrect'])
+    print("\t%s bytes in %s" % (r['d1_size'], r['d1']))
+    print("\t%s bytes in %s" % (r['d2_size'], r['d2']))
+    print("\t%.0f%% difference" % r['size_result'])
+    print("-----")
 
-# Takes the start_path parameter
-# adds the sizes of files in current directory,
-# and loops through any directories inside of
-# the current directory
-# Returns number of bytes as int
-def getDirectorySize(start_path = HTTPCACHE_DIR):
+
+# Computes the size of the path (including the files inside of other
+# directories). In detail, it adds the sizes of files in current directory,
+# and loops through any directories inside of the current directory.
+# Parameters:
+#   start_path : str    the start directory (usually relative path from
+#                       current script
+# Returns:
+#   total_size : int    in bytes
+def dir_size(start_path=HTTPCACHE_DIR):
     total_size = 0
     for dirpath, dirnames, filenames in os.walk(start_path):
         for f in filenames:
@@ -132,24 +139,48 @@ def getDirectorySize(start_path = HTTPCACHE_DIR):
     return total_size
 
 
-def setSpider(spiderName):
+# Helper function that writes a response body file. It depends on the storage
+# backend to which file it will write.
+# Parameters:
+#   self    : the spider class
+#   response: from a spider
+# Returns:
+#   none
+def write_response_file(self, response):
+    if self.crawler.settings.get('HTTPCACHE_STORAGE') == DEFAULT:
+        filename = self.__class__.__name__ + '_default.html'
+    else:
+        filename = self.__class__.__name__ + '_delta.html'
+    with open(filename, 'wb') as f:
+        f.write(response.body)
+    return
 
+
+# Prepares a spider to be run by a script. Sets up scrapy settings,
+# sets the source and a delta file html files.
+# Parameters:
+#   spider              : class     A class that is defined for the spider
+#   test_list           : 2-tuple   Data structure for tests to be performed
+#   comparisons_list    : 5-tuple   Data structure for comparisons to be stored
+# Returns:
+#   2-tuple of test_list and a comparison_list
+def set_spider(spider, test_list=tests, comparisons_list=comparisons):
     # Queue one test using the default backend
-    tests.append((spiderName.__name__,
-                  get_new_settings(spiderName.__name__ + '_default')))
+    test_list.append((spider, get_new_settings(spider.__name__ + '_default')))
 
     # Queue another test using our backend
-    tests.append((spiderName.__name__,
-                  get_new_settings(spiderName.__name__ + '_delta')))
+    test_list.append((spider, get_new_settings(spider.__name__ + '_delta')))
 
     # Queue up a test pair result to compare the runs of this spider
-    comparisons.append((spiderName.__name__,
-                        spiderName.__name__ + '_default.html',
-                        spiderName.__name__ + '_delta.html',
-                        spiderName.__name__ + '_default',
-                        spiderName.__name__ + '_delta'))
+    comparisons_list.append((spider.__name__,
+                             spider.__name__ + '_default.html',
+                             spider.__name__ + '_delta.html',
+                             spider.__name__ + '_default',
+                             spider.__name__ + '_delta'))
+    return test_list, comparisons_list
 
 # END UTILITY FUNCTIONS
+
 
 # SPIDERS
 
@@ -164,12 +195,8 @@ class FanficSpider(scrapy.Spider):
         "https://www.fanfiction.net/s/11498367/1/Left-Turn"]
 
     def parse(self, response):
-        if settings.get('HTTPCACHE_STORAGE') == DEFAULT:
-            filename = self.__class__.__name__ + '_default.html'
-        else:
-            filename = self.__class__.__name__ + '_delta.html'
-        with open(filename, 'wb') as f:
-            f.write(response.body)
+        write_response_file(self, response)
+
 
 # XKCD Spider
 class XkcdSpider(scrapy.Spider):
@@ -180,32 +207,26 @@ class XkcdSpider(scrapy.Spider):
     )
 
     def parse(self, response):
-        if settings.get('HTTPCACHE_STORAGE') == DEFAULT:
-            filename = self.__class__.__name__ + '_default.html'
-        else:
-            filename = self.__class__.__name__ + '_delta.html'
-
-        with open(filename, 'wb') as f:
-            f.write(response.body)
-
+        write_response_file(self, response)
         self.parse_next(self, response)
 
     def parse_next(self, response):
         # Safe if Xpath is empty, extract handles it.
-        prev_link = response.xpath('//*[@id="middleContainer"]/ul[1]/li[2]/a/@href').extract()
+        prev_link = response.xpath(
+                '//*[@id="middleContainer"]/ul[1]/li[2]/a/@href').extract()
         if prev_link:
             url = response.urljoin(prev_link[0])
             yield scrapy.Request(url, callback=self.parseNext)
 
-#END SPIDERS
+# END SPIDERS
 
-
-setSpider(FanficSpider)
-setSpider(XkcdSpider)
+(tests, comparisons) = set_spider(FanficSpider)
+(tests, comparisons) = set_spider(XkcdSpider)
 
 
 configure_logging()
 runner = CrawlerRunner()
+
 
 @defer.inlineCallbacks
 def crawl():
