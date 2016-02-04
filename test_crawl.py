@@ -93,7 +93,7 @@ def get_new_settings(directory=HTTPCACHE_DIR,
 # 'size_result': num         the percent size difference
 def generate_test_results(c):
     # Compare the fingerprint/checksum of f1/f2 using filecmp
-    # Compare the sizes of d1 and d2 using getDirectorySize utility function
+    # Compare the sizes of d1 and d2 using dir_size utility function
     # Return a dictionary in the correct format with the results
     # The imported filecmp package can help with isCorrect
     r = {
