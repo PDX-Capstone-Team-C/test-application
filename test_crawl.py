@@ -208,15 +208,15 @@ class XkcdSpider(scrapy.Spider):
 
     def parse(self, response):
         write_response_file(self, response)
-        self.parse_next(self, response)
+        self.parse_next(response)
+        return
 
     def parse_next(self, response):
         # Safe if Xpath is empty, extract handles it.
-        prev_link = response.xpath(
-                '//*[@id="middleContainer"]/ul[1]/li[2]/a/@href').extract()
+        prev_link = response.xpath('//*[@id="middleContainer"]/ul[1]/li[2]/a/@href').extract()
         if prev_link:
             url = response.urljoin(prev_link[0])
-            yield scrapy.Request(url, callback=self.parseNext)
+            yield scrapy.Request(url, callback=self.parse_next)
 
 # END SPIDERS
 
