@@ -99,7 +99,6 @@ def get_new_settings(directory=HTTPCACHE_DIR,
 def generate_test_results(c):
     r = {
         'name': c['spider_name'],
-        'isCorrect': True,
         'd1': HTTPCACHE_DIR + c['dir_default'],
         'd2': HTTPCACHE_DIR + c['dir_delta'],
         'd1_size': dir_size(HTTPCACHE_DIR + c['dir_default']),
