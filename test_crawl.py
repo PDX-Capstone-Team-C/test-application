@@ -11,6 +11,8 @@ from scrapy.linkextractors import LinkExtractor
 import filecmp
 import os
 from os.path import join, getsize
+import sys
+from commands import getstatusoutput
 #================================= ENUMS ======================================
 # A handy enum for the tests tuple used below
 SPIDER = 0
@@ -98,8 +100,8 @@ def generate_test_results(c):
         'isCorrect': filecmp.cmp(c['file_default'], c['file_delta'], True),
         'd1': HTTPCACHE_DIR + c['dir_default'],
         'd2': HTTPCACHE_DIR + c['dir_delta'],
-        'd1_size': dir_size(HTTPCACHE_DIR + c['dir_default']),
-        'd2_size': dir_size(HTTPCACHE_DIR + c['dir_delta'])
+        'd1_size': dir_size2(HTTPCACHE_DIR + c['dir_default']),
+        'd2_size': dir_size2(HTTPCACHE_DIR + c['dir_delta'])
     }
 
     if r['d1_size'] != 0 and r['d2_size'] != 0:
@@ -134,6 +136,11 @@ def dir_size(start_path=HTTPCACHE_DIR):
             fp = os.path.join(dirpath, f)
             total_size += os.path.getsize(fp)
     return total_size
+
+def dir_size2(start_path = HTTPCACHE_DIR):
+    cmd = "du -s -c -b "+start_path
+    code_err, output = getstatusoutput(cmd)
+    return int(output.split()[0])
 
 #======================== write_response_file =================================
 # Helper function that writes a response body file. It depends on the storage
