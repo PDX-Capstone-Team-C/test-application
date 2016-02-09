@@ -22,7 +22,7 @@ SETTING = 1
 # Change this to set the directory that the cache files will be output to
 # each spider will place its cache in a subdirectory of this location
 # with spidername_default and spidername_delta
-HTTPCACHE_DIR = '.scrapy/'
+HTTPCACHE_DIR = '/home/vagrant/scrapy-cache/'
 
 
 # Handy shorthands for long backend names
@@ -219,7 +219,7 @@ class XkcdSpider(scrapy.Spider):
 
     def parse(self, response):
         write_response_file(self, response)
-        self.parse_next(self, response)
+        self.parse_next(response)
 
     def parse_next(self, response):
         # Safe if Xpath is empty, extract handles it.
@@ -227,7 +227,7 @@ class XkcdSpider(scrapy.Spider):
                 '//*[@id="middleContainer"]/ul[1]/li[2]/a/@href').extract()
         if prev_link:
             url = response.urljoin(prev_link[0])
-            yield scrapy.Request(url, callback=self.parseNext)
+            yield scrapy.Request(url, callback=self.parse_next)
 
 #=================================== END SPIDERS ==============================
 
