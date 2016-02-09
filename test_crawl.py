@@ -13,7 +13,7 @@ import os
 from os.path import join, getsize
 import sys
 from commands import getstatusoutput
-#================================= ENUMS ======================================
+
 # A handy enum for the tests tuple used below
 SPIDER = 0
 SETTING = 1
@@ -24,9 +24,7 @@ HTTPCACHE_DIR = '.scrapy/'
 # Handy shorthands for long backend names
 DEFAULT = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 DELTA = 'scrapy.extensions.httpcache.DeltaLeveldbCacheStorage'
-#================================ END ENUMS ===================================
-
-#================================ DATA STRUCTURES =============================
+#============================== DATA STRUCTURES =============================
 # The list of spiders to run. Each item is 2-tuple with the first
 # item being the spider to run and the second being the settings
 # object with wich to run it
@@ -71,6 +69,7 @@ def get_new_settings(directory = HTTPCACHE_DIR,
     s.set('HTTPCACHE_DIR', directory)
     s.set('HTTPCACHE_STORAGE', backend)
     s.set('DEPTH_LIMIT', depth)
+    s.set('COMPRESSION_ENABLED', False)
     return s
 
 #============================ generate_test_settings() ========================
@@ -250,4 +249,4 @@ results = list(map(generate_test_results, comparisons))
 # Now display results of compare
 print("==================== SUMMARY ========================")
 for result in results:
-    display_test_results(result)
+    display_test_results(results)
