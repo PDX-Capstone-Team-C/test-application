@@ -22,7 +22,7 @@ SETTING = 1
 # Change this to set the directory that the cache files will be output to
 # each spider will place its cache in a subdirectory of this location
 # with spidername_default and spidername_delta
-HTTPCACHE_DIR = '/home/vagrant/scrapy-cache/'
+HTTPCACHE_DIR = '.scrapy/'
 
 
 # Handy shorthands for long backend names
