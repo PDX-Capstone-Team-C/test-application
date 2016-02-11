@@ -22,10 +22,10 @@ SETTING = 1
 # Change this to set the directory that the cache files will be output to
 # each spider will place its cache in a subdirectory of this location
 # with spidername_default and spidername_delta
-HTTPCACHE_DIR = '.scrapy/'
+HTTPCACHE_DIR = '/home/vagrant/scrapy-cache/'
 
 
-# Handy shorthands for long backend names
+# Handy shorthands for long backend
 DEFAULT = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 DELTA = 'scrapy.extensions.httpcache.DeltaLeveldbCacheStorage'
 LEVLEDB = 'scrapy.extensions.httpcache.LeveldbCacheStorage'
@@ -67,12 +67,11 @@ results = []
 #   directory: Directory to output cache to
 #   backend: Cache backend to use
 # Returns: Settings
-def get_new_settings(directory, backend = DEFAULT, depth = 1):
+def get_new_settings(directory, backend = DEFAULT):
     s = Settings()
     s.set('HTTPCACHE_ENABLED', True)
     s.set('HTTPCACHE_DIR', HTTPCACHE_DIR + directory)
     s.set('HTTPCACHE_STORAGE', backend)
-    s.set('DEPTH_LIMIT', depth)
     s.set('COMPRESSION_ENABLED', False)
     return s
 
@@ -198,6 +197,9 @@ class FanficSpider(scrapy.spiders.CrawlSpider):
     name = "fanfic_test"
     allowed_domains = ["www.fanfiction.net"]
     start_urls = ["https://www.fanfiction.net/comic/Scott-Pilgrim/"]
+    custom_settings = {
+        "DEPTH_LIMIT": 1
+    }
 
     rules = ( Rule(LinkExtractor(allow=()),callback="handle_page", follow=True),)
 
@@ -212,22 +214,20 @@ class FanficSpider(scrapy.spiders.CrawlSpider):
 # XKCD Spider
 class XkcdSpider(scrapy.Spider):
     name = "xkcd"
-    allowed_domains = ["xkcd.com"]
+    allowed_domains = ["10.10.10.10"]
     start_urls = (
-        'http://www.xkcd.com',
+        'http://10.10.10.10/',
     )
 
     def parse(self, response):
         write_response_file(self, response)
-        self.parse_next(self, response)
 
-    def parse_next(self, response):
         # Safe if Xpath is empty, extract handles it.
         prev_link = response.xpath(
                 '//*[@id="middleContainer"]/ul[1]/li[2]/a/@href').extract()
         if prev_link:
             url = response.urljoin(prev_link[0])
-            yield scrapy.Request(url, callback=self.parseNext)
+            yield scrapy.Request(url, callback=self.parse)
 
 #=================================== END SPIDERS ==============================
 
