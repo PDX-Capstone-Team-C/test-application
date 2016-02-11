@@ -1,15 +1,31 @@
 import uuid
 import random
+import sys
+import os
+import errno
 
-# Script to generate 500 HTML pages with random data
-# HTML files will be placed in /vagrant/web/html/random/ directory
+# Script to generate N HTML pages with random data
+#	Usage: python generate N directory
+# HTML files will be placed in /vagrant/web/html/random/[directory]
 # With vagrant web, can be accessed via 10.10.10.10/random
 
-def main():
-    for i in range(1,501):
-        filename = r'/vagrant/web/html/random/' +str(i) + '.html'
-        genPage(filename, i)
+def main(argv):
+		N = int(sys.argv[1])
+		for i in range(1, N):
+				directory = r'/vagrant/web/html/random/' + sys.argv[2]
+				checkDir(directory)
+				filename = str(i) + '.html'
+				genPage(directory + '/' + filename, i)
+		genPage(directory + '/' + 'index.html', N)
+		
 
+def checkDir(directory):
+		try:
+			os.makedirs(directory)
+		except OSError as exception:
+			if exception.errno != errno.EEXIST:
+				raise
+				
 def genPage(filename, i):
     file = open(filename, 'w')
     file.write('<!DOCTYPE html>')
@@ -33,4 +49,4 @@ def genContent(file):
         file.write('</p>\n')
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
