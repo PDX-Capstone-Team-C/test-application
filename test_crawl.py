@@ -9,9 +9,6 @@ from scrapy.spiders import CrawlSpider, Rule
 from scrapy.selector import HtmlXPathSelector
 from scrapy.linkextractors import LinkExtractor
 import filecmp
-import os
-from os.path import join, getsize
-import sys
 from commands import getstatusoutput
 
 # A handy enum for the tests tuple used below
