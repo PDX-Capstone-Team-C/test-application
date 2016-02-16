@@ -107,7 +107,7 @@ def generate_test_results(test_list=spider_tests, backends=BACKENDS):
             test_results.append({
                 'name': name,
                 'backend': backend,
-                'correct': True,
+                'correct': False,
                 'dir_size': dir_size(HTTPCACHE_DIR + name + "_" + backend),
                 'weissman': 0,
             })
@@ -143,13 +143,14 @@ def display_test_results(results, spider_list=spiders, backends=BACKENDS):
         }
 
         diff = 100
-        prev_size = 0
+        first_size = 0
         for backend in backends:
             instance = filter(lambda x: x['backend'] == backend, tests)[0]
             size = instance['dir_size']
-            if size > 0 and prev_size != 0:
-                diff = 100 - ((size / prev_size) * 100.00)
-            prev_size = size
+            if size > 0 and first_size != 0:
+                diff = 100 - ((size / first_size) * 100.00)
+            if size > 0 and first_size == 0:
+                first_size = size
 
             row[1] += " \t" + str(instance['correct'])  + "\t"
             row[2] += " \t" + str(instance['dir_size']) + "KB "
