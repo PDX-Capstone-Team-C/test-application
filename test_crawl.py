@@ -144,6 +144,20 @@ def dir_size2(start_path = HTTPCACHE_DIR):
     code_err, output = getstatusoutput(cmd)
     return int(output.split()[0])
 
+#=========================generate_random_data=================================
+# Generates random data for RandomSpider to crawl
+# Parameters:
+#  N : the number of random pages to be generated, as well as the directory
+#      in web/html/random the pages are stored in
+def generate_random_data(N):
+    num = str(N)
+    path = '/vagrant/web/html/random/' + num
+    print(path)
+    print(os.path.isdir(path))
+    if not os.path.isdir(path) :
+        cmd = 'python generate.py ' + num + " " + num
+        code_err, output = getstatusoutput(cmd)
+
 #======================== write_response_file =================================
 # Helper function that writes a response body file. It depends on the storage
 # backend to which file it will write.
@@ -229,12 +243,80 @@ class XkcdSpider(scrapy.Spider):
             url = response.urljoin(prev_link[0])
             yield scrapy.Request(url, callback=self.parse)
 
-#=================================== END SPIDERS ==============================
+
+class RandomSpider2(scrapy.Spider):
+    name = "random2"
+    allowed_domains = ['10.10.10.10/random/2']
+    start_urls = [
+        'http://10.10.10.10/random/2/index.html'
+    ]
+
+    def parse(self, response):
+        write_response_file(self, response)
+        prev_link = response.xpath('//a/@href').extract()
+        if prev_link:
+            url = response.urljoin(prev_link[0])
+            yield scrapy.Request(url, callback=self.parse)
+
+
+class RandomSpider10(scrapy.Spider):
+    name = "random10"
+    allowed_domains = ['10.10.10.10/random/10']
+    start_urls = [
+        'http://10.10.10.10/random/10/index.html'
+    ]
+
+    def parse(self, response):
+        write_response_file(self, response)
+        prev_link = response.xpath('//a/@href').extract()
+        if prev_link:
+            url = response.urljoin(prev_link[0])
+            yield scrapy.Request(url, callback=self.parse)
+
+
+class RandomSpider100(scrapy.Spider):
+    name = "random100"
+    allowed_domains = ['10.10.10.10/random/100']
+    start_urls = [
+        'http://10.10.10.10/random/100/index.html'
+    ]
+
+    def parse(self, response):
+        write_response_file(self, response)
+        prev_link = response.xpath('//a/@href').extract()
+        if prev_link:
+            url = response.urljoin(prev_link[0])
+            yield scrapy.Request(url, callback=self.parse)
+
+
+
+class RandomSpider500(scrapy.Spider):
+    name = "random500"
+    allowed_domains = ['10.10.10.10/random/500']
+    start_urls = [
+        'http://10.10.10.10/random/500/index.html'
+    ]
+
+    def parse(self, response):
+        write_response_file(self, response)
+        prev_link = response.xpath('//a/@href').extract()
+        if prev_link:
+            url = response.urljoin(prev_link[0])
+            yield scrapy.Request(url, callback=self.parse)
+
+# =================================== END SPIDERS ==============================
 
 (tests, comparisons) = set_spider(FanficSpider)
 (tests, comparisons) = set_spider(XkcdSpider)
+random_sizes = [2, 10, 100, 500]
+for i in random_sizes:
+    generate_random_data(i)
 
-configure_logging()
+(tests, comparisons) = set_spider(RandomSpider2)
+(tests, comparisons) = set_spider(RandomSpider10)
+(tests, comparisons) = set_spider(RandomSpider100)
+(tests, comparisons) = set_spider(RandomSpider500)
+# configure_logging()
 runner = CrawlerRunner()
 
 @defer.inlineCallbacks
