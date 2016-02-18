@@ -9,6 +9,7 @@ from scrapy.spiders import CrawlSpider, Rule
 from scrapy.selector import HtmlXPathSelector
 from scrapy.linkextractors import LinkExtractor
 import filecmp
+import os
 from commands import getstatusoutput
 
 # A handy enum for the tests tuple used below
@@ -35,6 +36,10 @@ BACKENDS = {
 #============================== DATA STRUCTURES =============================
 # String names for the spider classes. NOTE: WE use eval() to call a class.
 spiders = [
+    "RandomSpider2",
+    "RandomSpider10",
+    "RandomSpider100",
+    "RandomSpider500",
     "FanficSpider",
     "XkcdSpider",
 ]
@@ -139,7 +144,7 @@ def display_test_results(results, spider_list=spiders, backends=BACKENDS):
             4: "  -> % Diff:  ",
         }
 
-        diff = 100
+        diff = 0
         first_size = 0
         for backend in backends:
             instance = filter(lambda x: x['backend'] == backend, tests)[0]
@@ -198,8 +203,8 @@ def write_response_file(self, response, backends=BACKENDS):
 def generate_random_data(N):
     num = str(N)
     path = '/vagrant/web/html/random/' + num
-    print(path)
-    print(os.path.isdir(path))
+    # print(path)
+    # print(os.path.isdir(path))
     if not os.path.isdir(path) :
         cmd = 'python generate.py ' + num + " " + num
         code_err, output = getstatusoutput(cmd)
@@ -347,16 +352,16 @@ class RandomSpider500(scrapy.Spider):
 
 # =================================== END SPIDERS ==============================
 
-(tests, comparisons) = set_spider(FanficSpider)
-(tests, comparisons) = set_spider(XkcdSpider)
+# (tests, comparisons) = set_spider(FanficSpider)
+# (tests, comparisons) = set_spider(XkcdSpider)
 random_sizes = [2, 10, 100, 500]
 for i in random_sizes:
     generate_random_data(i)
 
-(tests, comparisons) = set_spider(RandomSpider2)
-(tests, comparisons) = set_spider(RandomSpider10)
-(tests, comparisons) = set_spider(RandomSpider100)
-(tests, comparisons) = set_spider(RandomSpider500)
+# (tests, comparisons) = set_spider(RandomSpider2)
+# (tests, comparisons) = set_spider(RandomSpider10)
+# (tests, comparisons) = set_spider(RandomSpider100)
+# (tests, comparisons) = set_spider(RandomSpider500)
 
 #=================================== END SPIDERS ==============================
 
@@ -366,7 +371,7 @@ spider_tests = set_spiders(spiders)
 # spider_tests = set_spider(FanficSpider)
 # spider_tests = set_spider(XkcdSpider)
 
-# configure_logging()
+configure_logging()
 runner = CrawlerRunner()
 
 @defer.inlineCallbacks
