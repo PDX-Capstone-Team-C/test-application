@@ -283,7 +283,6 @@ class XkcdSpider(scrapy.Spider):
         if prev_link:
             url = response.urljoin(prev_link[0])
             yield scrapy.Request(url, callback=self.parse)
-<<<<<<< HEAD
 
 
 class RandomSpider2(scrapy.Spider):
@@ -358,7 +357,7 @@ for i in random_sizes:
 (tests, comparisons) = set_spider(RandomSpider10)
 (tests, comparisons) = set_spider(RandomSpider100)
 (tests, comparisons) = set_spider(RandomSpider500)
-=======
+
 #=================================== END SPIDERS ==============================
 
 
@@ -367,7 +366,6 @@ spider_tests = set_spiders(spiders)
 # spider_tests = set_spider(FanficSpider)
 # spider_tests = set_spider(XkcdSpider)
 
->>>>>>> 4b3835db5a520b85c561ab1b1d719d59eb308e46
 # configure_logging()
 runner = CrawlerRunner()
 
