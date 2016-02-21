@@ -44,6 +44,8 @@ spiders = [
     "XkcdSpider",
 ]
 
+
+
 # The list of spiders tests to run. Each item is 2-tuple with the first item
 # being the spider to run and the second being the settings object with
 # which to run it
@@ -292,13 +294,14 @@ class XkcdSpider(scrapy.Spider):
 
 class RandomSpider2(scrapy.Spider):
     name = "random2"
-    allowed_domains = ['10.10.10.10/random/2']
+    allowed_domains = ['10.10.10.10']
     start_urls = [
         'http://10.10.10.10/random/2/index.html'
     ]
 
     def parse(self, response):
-        write_response_file(self, response)
+        #print('wtf')
+        #write_response_file(self, response)
         prev_link = response.xpath('//a/@href').extract()
         if prev_link:
             url = response.urljoin(prev_link[0])
@@ -307,28 +310,30 @@ class RandomSpider2(scrapy.Spider):
 
 class RandomSpider10(scrapy.Spider):
     name = "random10"
-    allowed_domains = ['10.10.10.10/random/10']
+    allowed_domains = ['10.10.10.10']
     start_urls = [
         'http://10.10.10.10/random/10/index.html'
     ]
 
     def parse(self, response):
-        write_response_file(self, response)
+        #write_response_file(self, response)
+        #print(response)
         prev_link = response.xpath('//a/@href').extract()
         if prev_link:
             url = response.urljoin(prev_link[0])
+            #print('******' + prev_link[0])
             yield scrapy.Request(url, callback=self.parse)
 
 
 class RandomSpider100(scrapy.Spider):
     name = "random100"
-    allowed_domains = ['10.10.10.10/random/100']
+    allowed_domains = ['10.10.10.10']
     start_urls = [
         'http://10.10.10.10/random/100/index.html'
     ]
 
     def parse(self, response):
-        write_response_file(self, response)
+        #write_response_file(self, response)
         prev_link = response.xpath('//a/@href').extract()
         if prev_link:
             url = response.urljoin(prev_link[0])
@@ -338,13 +343,13 @@ class RandomSpider100(scrapy.Spider):
 
 class RandomSpider500(scrapy.Spider):
     name = "random500"
-    allowed_domains = ['10.10.10.10/random/500']
+    allowed_domains = ['10.10.10.10']
     start_urls = [
         'http://10.10.10.10/random/500/index.html'
     ]
 
     def parse(self, response):
-        write_response_file(self, response)
+        #write_response_file(self, response)
         prev_link = response.xpath('//a/@href').extract()
         if prev_link:
             url = response.urljoin(prev_link[0])
